@@ -1,9 +1,19 @@
+import nltk.data
 from collections import Counter
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.stem import PorterStemmer
+from pathlib import Path
 import string
 import pickle
+
+try:
+    nltk.data.find('tokenizers/punkt.zip')
+except LookupError:
+    nltk.download('punkt')
+    print('punkt downloaded.')
+
+data_dir = Path.home() / 'my_reddit'
 
 def clean(**kwargs):  # obtains a word to index mapping as well as clean the dataset of punctuation and stopwords
     count = 0
@@ -69,7 +79,8 @@ def obtainKFrequentWords(k='',**kwargs): # obtain w2i without stemming or stopwo
 def filterByFrequency(w2i,**kwargs): # filter the reviews with only words with frequency at least k and replacing others with 'unk'
 
     for label,fname in kwargs.items():
-        with open(fname+'_filtered','w') as ft:
+        filtered_fname = fname.with_name(fname.name + '_filtered')
+        with open(filtered_fname,'w') as ft:
             with open(fname,errors='ignore') as fs:
                 for line in fs:
                     label = line[0]
@@ -81,7 +92,8 @@ def filterByFrequency(w2i,**kwargs): # filter the reviews with only words with f
 def filterByFrequencyIDs(w2i,**kwargs): # same function as filterByFrequency but the ids of the reviewers are present
     
     for label,fname in kwargs.items():
-        with open(fname+'_filtered','w') as ft:
+        filtered_fname = fname.with_name(fname.name + '_filtered')
+        with open(filtered_fname,'w') as ft:
             with open(fname) as fs:
                 for line in fs:
                     line = line.strip() 
@@ -94,16 +106,18 @@ def filterByFrequencyIDs(w2i,**kwargs): # same function as filterByFrequency but
                     ft.write('\n')
 
 if __name__ == '__main__':
+    train_file_path = data_dir / 'training_gender_text_mapped.csv'
+    validation_file_path = data_dir / 'validation_gender_text_mapped.csv'
 
-    w2i,count = obtainKFrequentWords(k=5,train_file='/home/rachneet/datasets/reddit/train_reddit.csv', validation_file='/home/rachneet/datasets/reddit/validation_reddit.csv')
+    w2i,count = obtainKFrequentWords(k=5,train_file=train_file_path, validation_file=validation_file_path)
     print('vocabulary size - ',len(w2i))
  
     print(len(w2i),count)
 
-    filterByFrequency(w2i,train_file='/home/rachneet/datasets/reddit/train_reddit.csv', validation_file='/home/rachneet/datasets/reddit/validation_reddit.csv')
+    filterByFrequency(w2i,train_file=train_file_path, validation_file=validation_file_path)
 
     w2i['oovb'] = count
     
-    with open('word2index.pickle','wb') as ft:
+    with open(data_dir / 'word2index.pickle','wb') as ft:
        pickle.dump(w2i,ft)
  

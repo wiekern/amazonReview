@@ -19,6 +19,9 @@ import numpy as np
 from nltk import word_tokenize
 import pickle
 
+from pathlib import Path
+data_dir = Path.home() / 'my_reddit'
+
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 class Dataset(data.Dataset):
@@ -87,7 +90,6 @@ def sortbylength(X,y,s_lengths):
 
 
 def ValidationAccuracy(encoder,dataset_validate,batch_size):
-
     loader_validate = data.DataLoader(dataset_validate,batch_size=batch_size)
     true_labels = []
     predicted_labels = []
@@ -154,7 +156,8 @@ def encodeDataset(fname,w2i,padding_idx,sent_length):
     lengths = []
     count = 0
 
-    with open(fname+'_filtered') as fs:    
+    filtered_fname = fname.with_name(fname.name + '_filtered')
+    with open(filtered_fname) as fs:    
          for line in fs:
              count+=1
              label = line[0]
@@ -178,18 +181,19 @@ def encodeDataset(fname,w2i,padding_idx,sent_length):
 if __name__=='__main__':
 
     sent_length = 100
-    train_file,validation_file = '../../../amazonUser/User_level_train.csv','../../../amazonUser/User_level_validation.csv'
-    with open('../HAN/word2index.pickle','rb') as fs:
+    train_file_path = data_dir / 'training_gender_text_mapped.csv'
+    validation_file_path = data_dir / 'validation_gender_text_mapped.csv'
+    with open(data_dir / 'word2index.pickle','rb') as fs:
         w2i = pickle.load(fs)
 
     print('loaded vocabulary')
-    print('size of vocabulary: ',len(w2i))
+    print('size of vocabulary: ', len(w2i))
 
     vocab_size = len(w2i)
     padding_idx = 0 
 
-    reviews_train,labels_train,lengths_train = encodeDataset(train_file,w2i,padding_idx,sent_length)
-    reviews_validate, labels_validate, lengths_validate = encodeDataset(validation_file,w2i,padding_idx,sent_length)
+    reviews_train,labels_train,lengths_train = encodeDataset(train_file_path,w2i,padding_idx,sent_length)
+    reviews_validate, labels_validate, lengths_validate = encodeDataset(validation_file_path,w2i,padding_idx,sent_length)
     #reviews_test, labels_test, lengths_test = encodeDataset(test_file,w2i,padding_idx,sent_length)
     print('created batches from data loader')
 
@@ -206,5 +210,5 @@ if __name__=='__main__':
     batch_size = 256
     encoder = Encoder(input_size, encoding_size, hidden_size, output_size,layers, padding_idx)
     encoder = encoder.to(device)
-    train(encoder,dataset_train, dataset_validate, batch_size, saveas='models_amazon/RNN_vanilla_2.pt')
+    train(encoder,dataset_train, dataset_validate, batch_size, saveas=data_dir / 'RNN_vanilla_2.pt')
 
