@@ -13,7 +13,22 @@ except LookupError:
     nltk.download('punkt')
     print('punkt downloaded.')
 
-data_dir = Path.home() / 'my_reddit'
+dataset_type = 'pan_new'
+if dataset_type == 'yelp':
+    print('yelp')
+    data_dir = Path.home() / 'GenderPerformance/datasets/yelp'
+elif dataset_type == 'reddit':
+    print('reddit')
+    data_dir = Path.home() / 'GenderPerformance/datasets/reddit'
+elif dataset_type == 'stackexchange':
+    print('stackexchange')
+    data_dir = Path.home() / 'GenderPerformance/datasets/stackexchange'
+elif dataset_type == 'pan_new':
+    print('pan_new')
+    data_dir = Path.home() / 'GenderPerformance/datasets/pan_new'
+else:
+    print('pan')
+    data_dir = Path.home() / 'GenderPerformance/datasets/pan'
 
 def clean(**kwargs):  # obtains a word to index mapping as well as clean the dataset of punctuation and stopwords
     count = 0
@@ -106,8 +121,8 @@ def filterByFrequencyIDs(w2i,**kwargs): # same function as filterByFrequency but
                     ft.write('\n')
 
 if __name__ == '__main__':
-    train_file_path = data_dir / 'training_gender_text_mapped.csv'
-    validation_file_path = data_dir / 'validation_gender_text_mapped.csv'
+    train_file_path = data_dir / 'training_gender_text.csv'
+    validation_file_path = data_dir / 'validation_gender_text.csv'
 
     w2i,count = obtainKFrequentWords(k=5,train_file=train_file_path, validation_file=validation_file_path)
     print('vocabulary size - ',len(w2i))

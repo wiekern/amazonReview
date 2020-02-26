@@ -19,8 +19,27 @@ import numpy as np
 from nltk import word_tokenize
 import pickle
 
+import tensorwatch as tw
+from torchviz import make_dot
 from pathlib import Path
-data_dir = Path.home() / 'my_reddit'
+
+dataset_type = 'pan_new'
+if dataset_type == 'yelp':
+    print('yelp')
+    data_dir = Path.home() / 'GenderPerformance/datasets/yelp'
+elif dataset_type == 'reddit':
+    print('reddit')
+    data_dir = Path.home() / 'GenderPerformance/datasets/reddit'
+elif dataset_type == 'stackexchange':
+    print('stackexchange')
+    data_dir = Path.home() / 'GenderPerformance/datasets/stackexchange'
+elif dataset_type == 'pan':
+    print('pan')
+    data_dir = Path.home() / 'GenderPerformance/datasets/pan'
+elif dataset_type == 'pan_new':
+    print('pan_new')
+    data_dir = Path.home() / 'GenderPerformance/datasets/pan_new'
+
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
@@ -181,8 +200,8 @@ def encodeDataset(fname,w2i,padding_idx,sent_length):
 if __name__=='__main__':
 
     sent_length = 100
-    train_file_path = data_dir / 'training_gender_text_mapped.csv'
-    validation_file_path = data_dir / 'validation_gender_text_mapped.csv'
+    train_file_path = data_dir / 'training_gender_text.csv'
+    validation_file_path = data_dir / 'validation_gender_text.csv'
     with open(data_dir / 'word2index.pickle','rb') as fs:
         w2i = pickle.load(fs)
 
@@ -209,6 +228,8 @@ if __name__=='__main__':
     layers = 2
     batch_size = 256
     encoder = Encoder(input_size, encoding_size, hidden_size, output_size,layers, padding_idx)
+#     tw.draw_model(encoder(X_lengths=32, batch_size=256), [1, 3, 224, 224])
+    print(encoder)
     encoder = encoder.to(device)
     train(encoder,dataset_train, dataset_validate, batch_size, saveas=data_dir / 'RNN_vanilla_2.pt')
 

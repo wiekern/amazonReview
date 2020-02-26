@@ -1,3 +1,7 @@
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path.cwd().parents[1]))
+
 from torch.utils import data
 from torch.nn.utils import rnn
 from sklearn.metrics import accuracy_score
@@ -14,6 +18,23 @@ from models.HAN import preprocess as pp
 import pickle
 import os
 
+dataset_type = 'pan_new'
+if dataset_type == 'yelp':
+    print('yelp')
+    data_dir = Path.home() / 'GenderPerformance/datasets/yelp'
+elif dataset_type == 'reddit':
+    print('reddit')
+    data_dir = Path.home() / 'GenderPerformance/datasets/reddit'
+elif dataset_type == 'stackexchange':
+    print('stackexchange')
+    data_dir = Path.home() / 'GenderPerformance/datasets/stackexchange'
+elif dataset_type == 'pan':
+    print('pan')
+    data_dir = Path.home() / 'GenderPerformance/datasets/pan'
+elif dataset_type == 'pan_new':
+    print('pan_new')
+    data_dir = Path.home() / 'GenderPerformance/datasets/pan_new'
+    
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 class DatasetInfer(data.Dataset):
@@ -50,11 +71,13 @@ def encodeDatasetIDs(fname,w2i,padding_idx,sent_length):
     ids_ = []
 
     count = 0
-    with open(fname+'_filtered') as fs:
+    filtered_fname = fname.with_name(fname.name + '_filtered')
+    with open(filtered_fname) as fs:
          for line in fs:
              line = line.strip()
              count+=1
-             label = line[-1]
+             #label = line[-1]
+             label = 1
              ind = line.find(',')
              id_ = line[:ind]
              review = line[ind+1:-2]
@@ -103,7 +126,7 @@ def inference(encoder,dataset_test,batch_size):
             predicted_labels+=labels.cpu().numpy().tolist()
             reviewer_id+=ids_
 
-    with open('inference_result_RNN_vanilla_2.csv','w') as ft:
+    with open(data_dir / 'inference_result_RNN_vanilla_2.csv','w') as ft:
         ft.write('True_label,Predicted_label,ReviewerID\n')
         for t_l,p_l,rev_id in zip(true_labels,predicted_labels,reviewer_id):
             ft.write(str(t_l)+','+str(p_l)+','+rev_id)
@@ -111,17 +134,18 @@ def inference(encoder,dataset_test,batch_size):
 
 if __name__=='__main__':
 
-    with open('../HAN/word2index.pickle','rb') as fs:
+    with open(data_dir / 'word2index.pickle','rb') as fs:
             w2i = pickle.load(fs)
 
     print('loaded vocabulary')
     print('size of vocabulary: ',len(w2i))
     sent_length = 100
-    test_file = '../../../amazonUser/User_level_test_with_id.csv'
+    test_file = data_dir / 'undisclosed_id_text_gender.csv'
     vocab_size = len(w2i)
     padding_idx = 0
 
-    if os.path.exists(test_file+'_filtered'):
+    filtered_fname = test_file.with_name(test_file.name + '_filtered')
+    if os.path.exists(filtered_fname):
         print('filtered file already exists... skipping creation of filtered file')
     else:
         print('filtered file not found... creating filtered file')
@@ -135,7 +159,7 @@ if __name__=='__main__':
     batch_size = 256
     encoding_size = 200
     encoder = Encoder(input_size+1,encoding_size, hidden_size, output_size,layers, padding_idx)
-    encoder.load_state_dict(torch.load('RNN_vanilla_2.pt'))
+    encoder.load_state_dict(torch.load(data_dir / 'RNN_vanilla_2.pt'))
     encoder = encoder.to(device)
 
     print('model loaded')
